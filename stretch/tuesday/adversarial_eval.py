@@ -17,16 +17,23 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 import lab  # noqa: E402
 
 
-def load_adversarial_set(path: str = "stretch/tuesday/adversarial_set.csv") -> pd.DataFrame:
+def load_adversarial_set(
+    path: str = "stretch/tuesday/adversarial_set.csv",
+) -> pd.DataFrame:
     """
     Load the adversarial test set CSV.
 
     Verifies columns: qid, question, context, gold_answer, pattern_tag.
     """
+    df = pd.read_csv(path)
+    required = {"qid", "question", "context", "gold_answer", "pattern_tag"}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(f"{path} is missing required columns: {missing}")
+    return df
     # TODO: read the CSV at the given path
     # TODO: verify all five required columns exist; raise a clear error if any are missing
     # TODO: return the DataFrame
-    raise NotImplementedError("load_adversarial_set not implemented")
 
 
 def evaluate_adversarial(qa, df: pd.DataFrame) -> dict:
@@ -40,11 +47,41 @@ def evaluate_adversarial(qa, df: pd.DataFrame) -> dict:
           "predictions": [ ... lab.evaluate_qa-shaped entries plus pattern_tag ... ],
         }
     """
+    # run base evaluation
+    results = lab.evaluate_qa(qa, df)
+
+    predictions = results["predictions"]
+
+    # map qid -> pattern_tag
+    tag_lookup = dict(zip(df["qid"], df["pattern_tag"]))
+
+    # add pattern_tag to predictions
+    for pred in predictions:
+        pred["pattern_tag"] = tag_lookup[pred["qid"]]
+
+    # compute per-pattern metrics
+    per_pattern = {}
+
+    for tag in df["pattern_tag"].unique():
+
+        tag_preds = [p for p in predictions if p["pattern_tag"] == tag]
+
+        avg_em = sum(p["em"] for p in tag_preds) / len(tag_preds)
+        avg_f1 = sum(p["f1"] for p in tag_preds) / len(tag_preds)
+
+        per_pattern[tag] = {"em": avg_em, "f1": avg_f1, "n": len(tag_preds)}
+
+    return {
+        "em": results["em"],
+        "f1": results["f1"],
+        "n": results["n"],
+        "per_pattern": per_pattern,
+        "predictions": predictions,
+    }
     # TODO: call lab.evaluate_qa for the aggregate metrics + predictions list
     # TODO: enrich each prediction with its pattern_tag (lookup from df by qid)
     # TODO: compute per-pattern aggregates (group by pattern_tag, mean em + f1, count)
     # TODO: return the combined dict
-    raise NotImplementedError("evaluate_adversarial not implemented")
 
 
 def main() -> None:

@@ -8,11 +8,12 @@ import json
 import os
 import re
 import string
-
+from transformers import pipeline
 import pandas as pd
-
+from collections import Counter
 
 # -- Helpers (provided — do NOT modify) --------------------------------------
+
 
 def get_data_path() -> str:
     """
@@ -52,17 +53,23 @@ def load_examples(data_path: str) -> pd.DataFrame:
 
 # -- Task 1: Normalization + EM + F1 (same as drill) -------------------------
 
+
 def normalize_answer(s: str) -> str:
     """SQuAD-style normalization (see drill / reading)."""
+    s = s.lower()
+    s = re.sub(r"\b(a|an|the)\b", " ", s)
+    s = "".join(ch for ch in s if ch not in string.punctuation)
+    s = " ".join(s.split())
+    return s
     # TODO: apply the four-step SQuAD normalization (lowercase, strip articles, strip punctuation, collapse whitespace);
     #       remember the article strip needs word-boundary regex
-    raise NotImplementedError("normalize_answer not implemented")
 
 
 def exact_match(pred: str, gold: str) -> int:
     """Return 1 if normalized prediction equals normalized gold."""
+
+    return int(normalize_answer(gold) == normalize_answer(pred))
     # TODO: compare normalized values, return int
-    raise NotImplementedError("exact_match not implemented")
 
 
 def token_f1(pred: str, gold: str) -> float:
@@ -74,19 +81,43 @@ def token_f1(pred: str, gold: str) -> float:
       - one empty -> 0.0
     Returns float in [0.0, 1.0]; never NaN.
     """
+    pred_tokens = normalize_answer(pred).split()
+    gold_tokens = normalize_answer(gold).split()
+    if not pred_tokens and not gold_tokens:
+        return 1.0
+    if not pred_tokens or not gold_tokens:
+        return 0.0
+    pred_counter = Counter(pred_tokens)
+    gold_counter = Counter(gold_tokens)
+
+    common = pred_counter & gold_counter
+    num_same = sum(common.values())
+    precision = num_same / len(pred_tokens)
+    recall = num_same / len(gold_tokens)
+
+    # harmonic mean (F1)
+    if precision + recall == 0:
+        return 0.0
+    f1 = 2 * precision * recall / (precision + recall)
+
+    return f1
+
     # TODO: normalize, split, handle empty, compute multiset overlap, return F1
     raise NotImplementedError("token_f1 not implemented")
 
 
 # -- Task 2: Build the QA pipeline -------------------------------------------
 
+
 def build_qa_pipeline(model_name: str):
     """Construct a Hugging Face question-answering pipeline."""
+    return pipeline("question-answering", model=model_name)
     # TODO: build a question-answering pipeline using the given model name (same as the drill)
     raise NotImplementedError("build_qa_pipeline not implemented")
 
 
 # -- Task 3: Predict one answer ---------------------------------------------
+
 
 def predict_one(qa, question: str, context: str) -> str:
     """
@@ -94,11 +125,14 @@ def predict_one(qa, question: str, context: str) -> str:
 
     Returns the answer STRING only (not the full pipeline output dict).
     """
+    output = qa(question=question, context=context)
+    return output["answer"]
     # TODO: invoke the pipeline on the (question, context) pair and return only the predicted answer string
     raise NotImplementedError("predict_one not implemented")
 
 
 # -- Task 4: Evaluate over the dataset ---------------------------------------
+
 
 def evaluate_qa(qa, examples: pd.DataFrame) -> dict:
     """
@@ -116,12 +150,47 @@ def evaluate_qa(qa, examples: pd.DataFrame) -> dict:
         }
     context_excerpt is the first 80 chars of the context (CSV-friendly).
     """
+    predictions = []
+    em_scores = []
+    f1_scores = []
+    for _, row in examples.iterrows():
+        qid = str(row["qid"])
+        question = str(row["question"])
+        context = str(row["context"])
+        gold = str(row["gold_answer"])
+        predicted = predict_one(qa, question, context)
+
+        em_score = exact_match(predicted, gold)
+        f1_score = token_f1(predicted, gold)
+
+        em_scores.append(em_score)
+        f1_scores.append(f1_score)
+
+        predictions.append(
+            {
+                "qid": qid,
+                "question": question,
+                "context_excerpt": context[:80],
+                "gold_answer": gold,
+                "predicted_answer": predicted,
+                "em": em_score,
+                "f1": round(f1_score, 4),
+            }
+        )
+
+    return {
+        "em": round(sum(em_scores) / len(em_scores), 4) if em_scores else 0.0,
+        "f1": round(sum(f1_scores) / len(f1_scores), 4) if f1_scores else 0.0,
+        "n": len(predictions),
+        "predictions": predictions,
+    }
     # TODO: iterate over examples, call predict_one, compute em + f1
     # TODO: build predictions list, aggregate em/f1, return
     raise NotImplementedError("evaluate_qa not implemented")
 
 
 # -- Task 5: Orchestrate -----------------------------------------------------
+
 
 def main() -> None:
     """Load data, build pipeline, evaluate, write artifacts."""
