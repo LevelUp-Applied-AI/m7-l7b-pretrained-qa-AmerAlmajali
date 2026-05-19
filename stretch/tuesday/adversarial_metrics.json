@@ -1,0 +1,63 @@
+{
+  "em": 0.8485,
+  "f1": 0.8658,
+  "n": 33,
+  "per_pattern": {
+    "person-same-sentence": {
+      "em": 1.0,
+      "f1": 1.0,
+      "n": 8
+    },
+    "person-cross-sentence": {
+      "em": 1.0,
+      "f1": 1.0,
+      "n": 4
+    },
+    "person-paraphrased": {
+      "em": 1.0,
+      "f1": 1.0,
+      "n": 3
+    },
+    "location-same-sentence": {
+      "em": 0.5,
+      "f1": 0.64285,
+      "n": 4
+    },
+    "location-cross-sentence": {
+      "em": 0.5,
+      "f1": 0.5,
+      "n": 2
+    },
+    "location-paraphrased": {
+      "em": 1.0,
+      "f1": 1.0,
+      "n": 2
+    },
+    "org-same-sentence": {
+      "em": 0.5,
+      "f1": 0.5,
+      "n": 4
+    },
+    "org-cross-sentence": {
+      "em": 1.0,
+      "f1": 1.0,
+      "n": 2
+    },
+    "control-person": {
+      "em": 1.0,
+      "f1": 1.0,
+      "n": 2
+    },
+    "control-location": {
+      "em": 1.0,
+      "f1": 1.0,
+      "n": 1
+    },
+    "control-org": {
+      "em": 1.0,
+      "f1": 1.0,
+      "n": 1
+    }
+  },
+  "model": "distilbert-base-cased-distilled-squad"
+}
