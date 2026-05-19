@@ -1,4 +1,4 @@
-# Adversarial QA Probe — Analysis Memo
+# Adversarial QA Probe - Analysis Memo
 
 > Replace each placeholder section. Memo target: ~1 page. The TA rubric rewards specificity grounded in your data.
 
@@ -61,16 +61,16 @@ Cite at least 3 specific (qid, question, gold, predicted) tuples that illustrate
 
 
 - **(ADV_L03)** *Where is the Los Angeles Philharmonic based?*  
-  → gold: `Los Angeles`, predicted: `Walt Disney Concert Hall`.  
+  -> gold: `Los Angeles`, predicted: `Walt Disney Concert Hall`.  
   The model selected a nearby landmark entity instead of the broader city-level location requested by the question, suggesting confusion between related location spans.
 
 - **(ADV_O01)** *Which organization found Dr. Murray guilty?*  
-  → gold: `Los Angeles Superior Court`, predicted: `American Medical Association`.  
+  -> gold: `Los Angeles Superior Court`, predicted: `American Medical Association`.  
   The context contained multiple organization entities, and the model incorrectly selected the distractor organization rather than the organization directly associated with the conviction event.
 
 - **(ADV_O04)** *Which organization distributes the distilbert QA model?*  
-  → gold: `Hugging Face`, predicted: `Google`.  
-  The model over-associated the phrase “fine-tuned by Google” with the question and ignored the later clause identifying the actual distributor of the model.
+ -> gold: `Hugging Face`, predicted: `Google`.  
+  The model over-associated the phrase fine-tuned by Google with the question and ignored the later clause identifying the actual distributor of the model.
 
 
 ## 4. Production Defense
